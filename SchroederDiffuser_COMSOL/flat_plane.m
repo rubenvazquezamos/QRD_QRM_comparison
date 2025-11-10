@@ -76,7 +76,7 @@ clf(fig)
 set(fig,'Renderer','opengl');
 mphgeom(model,'geom1','facealpha',0.5);
 box on;
-kk = input('Is the geometry valid?');clear kk;
+% kk = input('Is the geometry valid?');clear kk;
 
 %-------------------------------------------------------------------------%
 %% PHYSICS

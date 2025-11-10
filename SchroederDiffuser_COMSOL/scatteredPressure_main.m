@@ -1,5 +1,3 @@
-function [Ps_1, Ps_2, Psflatnum] = scatteredPressure_main(~)
-
 % 1 Run COMSOL to MATLAB LiveLink
 % 2 Then run this script.
 
@@ -36,7 +34,7 @@ File.Extension = '.mph';
 %-------------------------------------------------------------------------%
 Freq.f_min = 250;                                  % Minimum Freq of interest
 Freq.f_max = 4000;                               % Maximum Freq of interest
-Freq.df = 250;                                    % Freq discretization
+Freq.df = 50;                                    % Freq discretization
 Freq.Vector = (Freq.f_min:Freq.df:Freq.f_max);    % Freq vector
 Freq.Nf = numel(Freq.Vector);                   % Number of frequencies
 
@@ -60,14 +58,14 @@ Probe.theta_vector = linspace(Probe.theta_min,Probe.theta_max,Probe.Resolution);
 Probe.Coordinates(1,:) = Probe.radius*cos(Probe.theta_vector); %Probe x coordinates
 Probe.Coordinates(2,:) = Probe.radius*sin(Probe.theta_vector); %Probe y coordinates
 
-% %% FEM MODELLING
+%       FEM MODELLING
 %-------------------------------------------------------------------------%
 save_dlg = false;
 % Set save_dlg to true if you want to have the option to clear mesh and solutions 
 % data after running the model
 tStart = tic;
 Ps_1 = QR_5(Freq,Geo,Probe,File,save_dlg); %call COMSOL model for QRD
-Ps_2 = QRM(Freq,Geo,Probe,File,save_dlg)';
+Ps_2 = QRM(Freq,Geo,Probe,File,save_dlg);
 Psflatnum = flat_plane(Freq,Geo,Probe,File,save_dlg);  %call COMSOL model for flat plane
 tEnd = toc(tStart);
 fprintf('FEM. time: %d minutes and  %.f seconds\n', floor(tEnd/60), rem(tEnd,60));
@@ -99,7 +97,7 @@ switch calcDC
     hold on
     plot(Freq.Vector,delta.f,"LineWidth",2,"LineStyle","--")
     ylim([0, 1])
-    legend(["N=5 QRD (numerical)","N=5 QRD (TMM)","flat plane (numerical)","flat plane (TMM)"],...
+    legend(["N=5 QRD (numerical)","N=5 QRM (numerical)","N=5 QRD (TMM)","flat plane (numerical)","flat plane (TMM)"],...
         "Location","southeast")
     title(['diffusion coefficient - $r=$' num2str(Probe.radius) ' m'])
     xlabel("Hz")
@@ -122,7 +120,5 @@ function delta = calculateDiffusionCoefficient(Ps,theta)
     SIsq = sum(SI.^2,2);
     
     delta = (SIsum.^2 - SIsq)./((n_d-1)*(SIsq)); %diffusion coefficient
-
-end
 
 end

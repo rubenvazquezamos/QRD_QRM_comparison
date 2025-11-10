@@ -17,7 +17,16 @@ model.component.create('comp1', true);
 disp(' -- Sending parameters')
 %-------------------------------------------------------------------------%
 
-model.param.set('L', num2str(Geo.D), 'Width of the diffuser');
+model.param.set('L', num2str(Geo.D), 'Width of the flat plane');
+% model.param.set('Lw', '0.09[m]', 'Width of one well');
+model.param.set('Li', '0.01[m]', 'Width in between wells');
+% model.param.set('H', '0.3[m]', 'Height of the diffuser');
+% model.param.set('d1', '0[m]', 'Depth of well 1');
+% model.param.set('d2', '0.068[m]', 'Depth of well 2');
+% model.param.set('d3', '0.272[m]', 'Depth of well 3');
+% model.param.set('d4', '0.272[m]', 'Depth of well 4');
+% model.param.set('d5', '0.068[m]', 'Depth of well 5');
+% model.param.set('d6', '0.000001[m]', 'Depth of well 6');
 model.param.set('r_air', num2str(Probe.domain), 'Radius of the air domain (for single diffuser)');
 model.param.set('r0', '100[m]', 'Evaluation distance');
 model.param.set('Hair', '1[m]', 'Height of the air domain');
@@ -78,7 +87,7 @@ clf(fig)
 set(fig,'Renderer','opengl');
 mphgeom(model,'geom1','facealpha',0.5);
 box on;
-kk = input('Is the geometry valid?');clear kk;
+% kk = input('Is the geometry valid?');clear kk;
 
 %-------------------------------------------------------------------------%
 %% PHYSICS
