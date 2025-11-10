@@ -1,3 +1,5 @@
+function [Ps_1, Ps_2, Psflatnum] = scatteredPressure_main(~)
+
 % 1 Run COMSOL to MATLAB LiveLink
 % 2 Then run this script.
 
@@ -26,6 +28,7 @@ clear; clear global *; clc; warning off; close all;
 File.Path = [pwd,filesep,'Models'];
 File.Tag1 = 'Comsol_QRD5';
 File.Tag2 = 'flat_plane';
+File.Tag3 = 'optgeo.mphbin';
 File.Extension = '.mph';
 %-------------------------------------------------------------------------%
 
@@ -33,7 +36,7 @@ File.Extension = '.mph';
 %-------------------------------------------------------------------------%
 Freq.f_min = 250;                                  % Minimum Freq of interest
 Freq.f_max = 4000;                               % Maximum Freq of interest
-Freq.df = 25;                                    % Freq discretization
+Freq.df = 250;                                    % Freq discretization
 Freq.Vector = (Freq.f_min:Freq.df:Freq.f_max);    % Freq vector
 Freq.Nf = numel(Freq.Vector);                   % Number of frequencies
 
@@ -48,8 +51,8 @@ Geo.D = N*(Geo.W+Geo.Li)+Geo.Li; %width of panel in m
 
 %% COMSOL PROBE INFORMATION
 %-------------------------------------------------------------------------%
-Probe.domain = 8; %radius of air domain in meters
-Probe.radius = 6; %radius of arc in meters
+Probe.domain = 4; %radius of air domain in meters
+Probe.radius = 3; %radius of arc in meters
 Probe.theta_min = pi*(10/180); %arc starting angle
 Probe.theta_max = pi*(170/180); %arc end angle
 Probe.Resolution = 181;
@@ -63,9 +66,9 @@ save_dlg = false;
 % Set save_dlg to true if you want to have the option to clear mesh and solutions 
 % data after running the model
 tStart = tic;
-% Ps_1 = QR_5(Freq,Geo,Probe,File,save_dlg); %call COMSOL model for QRD
+Ps_1 = QR_5(Freq,Geo,Probe,File,save_dlg); %call COMSOL model for QRD
 Ps_2 = QRM(Freq,Geo,Probe,File,save_dlg)';
-% Psflatnum = flat_plane(Freq,Geo,Probe,File,save_dlg);  %call COMSOL model for flat plane
+Psflatnum = flat_plane(Freq,Geo,Probe,File,save_dlg);  %call COMSOL model for flat plane
 tEnd = toc(tStart);
 fprintf('FEM. time: %d minutes and  %.f seconds\n', floor(tEnd/60), rem(tEnd,60));
 %-------------------------------------------------------------------------%
@@ -76,15 +79,19 @@ switch calcDC
     case 'Yes'
 
     %% CALCULATE DIFFUSION COEFFICIENT
-    %-------------------------------------------------------------------------%
+    %-------------------------------------------------------------------------   
     % QRD
-    delta.COMSOL = calculateDiffusionCoefficient(Ps_1,Probe.theta_vector); 
+    delta.COMSOL1 = calculateDiffusionCoefficient(Ps_1,Probe.theta_vector);
+    %QRM
+    delta.COMSOL2 = calculateDiffusionCoefficient(Ps_2,Probe.theta_vector);
     % Flat plane
     delta.flatnum = calculateDiffusionCoefficient(Psflatnum,Probe.theta_vector);
     
     run("QRD_TMM.m")
     figure()
-    plot(Freq.Vector,delta.COMSOL,"LineWidth",2); %plot diffusion coefficient
+    plot(Freq.Vector,delta.COMSOL1,"LineWidth",2); %plot diffusion coefficient
+    hold on
+    plot(Freq.Vector,delta.COMSOL2,"LineWidth",2)
     hold on
     plot(Freq.Vector,delta.QRD,"LineWidth",2)
     hold on
@@ -115,5 +122,7 @@ function delta = calculateDiffusionCoefficient(Ps,theta)
     SIsq = sum(SI.^2,2);
     
     delta = (SIsum.^2 - SIsq)./((n_d-1)*(SIsq)); %diffusion coefficient
+
+end
 
 end

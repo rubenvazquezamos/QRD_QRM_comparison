@@ -23,4 +23,4 @@ QRM_geometry = geo_generator(geometry,N,e); %generate geometry
 QRM_geometry.resetHist %compact model history
 QRM_geometry.geom('geom1').export('optgeo.mphbin') %save .mphbin geometry file
 
-run("scatteredPressure_main.m")
+[Ps_1, Ps_2, Psflatnum] = scatteredPressure_main();
