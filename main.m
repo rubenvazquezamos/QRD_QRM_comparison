@@ -24,13 +24,3 @@ QRM_geometry.resetHist %compact model history
 QRM_geometry.geom('geom1').export('optgeo.mphbin') %save .mphbin geometry file
 
 run("scatteredPressure_main");
-% 
-% %% ------ IMPORT METADIFFUSER GEOMETRY ------------------------------------
-% model.component('comp1').geom('geom1').create('imp1', 'Import');
-% model.component('comp1').geom('geom1').feature('imp1').set('type', 'native');
-% model.component('comp1').geom('geom1').feature('imp1').set('filename', File.Tag3);
-% model.component('comp1').geom('geom1').create('dif1', 'Difference');
-% model.component('comp1').geom('geom1').feature('dif1').selection('input').set({'c1'});
-% model.component('comp1').geom('geom1').feature('dif1').selection('input2').set({'imp1'});
-% %% ------------------------------------------------------------------------
-
