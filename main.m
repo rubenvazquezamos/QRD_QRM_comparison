@@ -20,7 +20,7 @@ QRM_geometry = geo_generator(geometry,N,stock_thickness);
 QRM_geometry.resetHist %compact model history
 QRM_geometry.geom('geom1').export('optgeo.mphbin') %save .mphbin geometry file
 
-run("scatteredPressure_main");
+run("buildCOMSOLmodels.m");
 
 function geometry = structureGeometry(optgeo)
     
