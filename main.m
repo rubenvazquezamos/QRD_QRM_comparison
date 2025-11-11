@@ -4,6 +4,8 @@
 % This script optimises a geometry and later generates it in COMSOL
 % to compare diffusion coefficients
 % 
+
+run("optimiseGeometry.m")
 clear all
 load("optgeo.mat")
 % 
