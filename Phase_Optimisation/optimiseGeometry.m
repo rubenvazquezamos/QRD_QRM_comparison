@@ -4,13 +4,10 @@
 
 global targetphase n M optim_f df stinson_constants panel_repetitions
 
-LatexPreamble() %run LateX preamble
 stinson_constants = generateStinsonConstants(); %stinson constants
 
 % =========================================================================
 % Frequency
-f_min = 100;
-f_max = 4000;
 df = 1;
 optim_f = 2000; %optimisation frequency
 
@@ -29,8 +26,8 @@ targetphase = angle(Rgoal);
 %% Optimisation parameters
 M = 1; %number of resonators per slit
 a_x = W;
-L = 20e-3; %depth of metadiffuser
-e = 3e-3; %stock thickness
+L = 50e-3; %depth of metadiffuser
+e = 12e-3; %stock thickness
 
 %---- Check phase profile ----
 figure(1)
@@ -164,59 +161,20 @@ table = geotable(optgeo);
 disp(table)
 
 figure()
-spacing = 100e-3; %spacing of unit cells in graphic
-geomchecker(optgeo,n,spacing);
+spaceBetweenCellsinGraphic = 100e-3;
+geomchecker(optgeo,n,spaceBetweenCellsinGraphic);
 answer = questdlg('Feasible geometry?');
+
 switch answer
     case 'Yes'
-    jj = 1;
     case 'No'
-    jj = 0;
-end
-
-% ---- Diffusion coefficient calculation ----
-if jj == 1
-     
-    [~, s_n, R_QRD] = QRDReflectionCoefficient(n,W,design_freq,f_min,f_max,df,rho_0,c_0);
-    [delta_nQRD, deltaQRD]= calculateDiffusionCoefficient(R_QRD,D,-pi/2,...
-        pi/2,100,4000,df,stinson_constants.sound_speed);
-    
-    Rmetaoptimised = MetadiffuserReflectionCoefficient(n,M, ...
-        panel_repetitions,optgeo,f_min,f_max,df);
-    D_meta = sum(optgeo.slit.widths + optgeo.neck.lengths...
-        + optgeo.cavity.lengths);
-    [delta_n, delta]= calculateDiffusionCoefficient(Rmetaoptimised,D,-pi/2,...
-        pi/2,100,4000,df,stinson_constants.sound_speed);
-    
-    
-    tiledlayout flow
-    nexttile
-    plot(delta_n,"LineWidth",1)
-    hold on
-    plot(delta_nQRD,"LineWidth",1)
-    xlabel("Hz")
-    ylabel("normalised diffusion coefficient")
-    ylim([0, 1])
-    legend("QRM","QRD")
-
-    nexttile
-    plot(delta,"LineWidth",1)
-    hold on
-    plot(deltaQRD,"LineWidth",1)
-    xlabel("Hz")
-    ylabel("diffusion coefficient")
-    ylim([0, 1])
-    legend("QRM","QRD")
-     
-else
-    disp("Geometry deemed infeasible by user");
+    disp('geometry deemed infeasible by user')
     return
 end
 
 optgeo.panel_thickness = L;
 save("optgeo.mat","optgeo") %output geometry variable to root dir.
 
-% clear all %clearing variables to prevent interference from globals
 % ========================================================================
 %% ----          OBJECTIVE FUNCTION           ----
 function error = objectiveFunction(X)  %(X is geometry optimisation variable)
@@ -230,7 +188,7 @@ function error = objectiveFunction(X)  %(X is geometry optimisation variable)
         geometry,optim_f,optim_f,df);
     metaphase = angle(metaR);
     % Objective is the absolute error between phases
-    error = sum(abs(metaphase - targetphase));
+    error = abs(metaphase - targetphase);
 end
 
 % =========================================================================
@@ -325,93 +283,8 @@ function table = geotable(optimisedgeometry)
 
 end
 
-function [] = LatexPreamble(~) % Latex Preamble
-    set(groot,'defaultAxesTickLabelInterpreter','latex');  
-    set(groot,'defaulttextinterpreter','latex');
-    set(groot,'defaultLegendInterpreter','latex');
-    set(groot,'defaultAxesFontSize',18)
-    set(0,'DefaultFigureWindowStyle','docked');
-    set(0,'defaultFigureColor',[1 1 1])
-    path = convertCharsToStrings(fileparts(matlab.desktop.editor.getActiveFilename));
-    cd(path)
-    clear; clear global *; clc; warning off;
-end
-
-
 %==========================================================================
 %%                      CALCULATION FUNCTIONS
-
-function [deltan, delta, Ps, Psflat] = calculateDiffusionCoefficient(R, D,...
-    theta_min,theta_max, f_min,f_max,df,c_0)
-% Function to calculate diffusion coefficient  
-
-    %% Frequency vector
-    f_v = f_min:df:f_max;
-    w = 2*pi*f_v;
-    k = w./c_0; %wavenumber in air (used in fraunhofer integral)
-    
-    %% Spatial discretisation
-    n = size(R,2);
-    x_points = lcm(n,100); %number of x points
-    x = linspace(-D/2, D/2, x_points);
-    theta = linspace(theta_min, theta_max, 181);
-
-    % Augment R matrix
-
-    augind = length(x)/n;
-    Rbig = repelem(R, 1, augind);
-    
-    % Define flat surface reference
-    Rflat = ones(size(Rbig));
-    
-    % Calculate far field scattered pressure
-    for ifreq = 1:length(k)
-        Ps(ifreq,:) = fftfraunhofer(theta, Rbig(ifreq,:), k(ifreq), x);
-        Psflat(ifreq,:) = fftfraunhofer(theta, Rflat(ifreq,:), k(ifreq), x);
-    end
-    
-    % Calculate diffusion coefficient
-    SI = abs(Ps).^2;
-    n_d = length(theta);
-    SIsum = sum(SI, 2);
-    SIsq = sum(SI.^2, 2);
-    
-    % Flat plane reference
-    SIf = abs(Psflat).^2;
-    SIfsum = sum(SIf, 2);
-    SIfsq = sum(SIf.^2, 2);
-    
-    % Calculate unnormalized diffusion coefficients
-    delta = (SIsum.^2 - SIsq) ./ ((n_d-1) * SIsq);
-    deltaf = (SIfsum.^2 - SIfsq) ./ ((n_d-1) * SIfsq);
-    
-    % Calculate normalized diffusion coefficient
-    deltan = (delta - deltaf) ./ (1 - deltaf);
-end
-
-
-function Ps = fftfraunhofer(theta,Rs,k,x)
-    % ======================================
-    %
-    %   PS = FFTFRAUNHOFER(THETA,RS,K,X)
-    %
-    %   FFTFRAUNHOFER calculates the far field PS using the Fraunhofer integral
-    %   of a surface with reflection RS(X) at wavenumber K and at angles THETA
-    %
-    %   Noé Jiménez, Salford, October 2016
-    %
-    %=======================================
-    na = length(x);
-    dx = x(2)-x(1);
-    Ps = zeros(size(theta));
-    for ia=1:na
-        Ps = Ps+Rs(ia).*exp(1i*k*x(ia)*sin(theta))*dx; 
-    end
-    
-    %Rs(ia), x(ia) and k are SCALARS. sin(theta) is a VECTOR
-
-end
-
 
 function R = MetadiffuserReflectionCoefficient(n, M, panel_repetitions, geometry, f_min,f_max,df)
     % Function to calculate reflection coefficient

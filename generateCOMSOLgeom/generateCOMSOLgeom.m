@@ -1,10 +1,10 @@
-function out = geo_generator(geometry,n,e)
+function out = generateCOMSOLgeom(geometry,N,e)
 %
 % This function generates an M=1 Acoustic Metadiffuser geometry with n unit
 % cells.
 %Inputs:
 % geometry - structure. Metadiffuser geometry (see test.m)
-% n - double. Number of cells
+% N - double. Number of cells
 % e - double. Stock thickness
 %
 %Output
@@ -16,7 +16,7 @@ function out = geo_generator(geometry,n,e)
 
 %rectangle labels
 
-for r_index = 1:3*n
+for r_index = 1:3*N
     r_label(r_index) = "r"+ num2str(r_index);
 end
 
@@ -39,7 +39,7 @@ model.component.create('comp1', true);
 model.component('comp1').geom.create('geom1', 2);
 
 
-for ii = 1:n %rectangle loop
+for ii = 1:N %rectangle loop
     
     l_c = geometry.cavity.l_c(ii);
     w_c = geometry.cavity.w_c(ii);
