@@ -2,32 +2,32 @@
 %well at a single frequency to that of a QRD.
 % Based on Phase_Optimisation v 2.1.2
 
-global targetphase n M optim_f df stinson_constants panel_repetitions
+global targetphase n optim_f df stinson_constants
 
 stinson_constants = generateStinsonConstants(); %stinson constants
 
 % =========================================================================
-% Frequency
-df = 1;
-optim_f = 2000; %optimisation frequency
 
-%---- QRD parameters ----
-n = 5; %number of wells and prime number
-design_freq = 500;
-panel_repetitions = 1;
+%% QRD parameters
+n = Geo.numberWells; %number of wells and prime number
+design_freq = Freq.designFreq; 
+W = Geo.wellWidth; %well width
+D = Geo.panelLength;
 rho_0 = stinson_constants.density;
-W = 7e-2; %well width
-D = n*W; %total length of panel
 c_0 = stinson_constants.sound_speed;
+
+%% Optimisation parameters
+df = 1; %frequency step
+optim_f = 2000; %optimisation frequency
+a_x = Geo.wellWidth; %unit cell length
+L = Geo.panelDepth;
+e = Geo.stockThickness;
+
+%% Obtain target phase
 [QRD_depths, s_n, Rgoal] = QRDReflectionCoefficient(n,W,design_freq,optim_f...
     ,optim_f,df,rho_0,c_0);
 targetphase = angle(Rgoal);
 
-%% Optimisation parameters
-M = 1; %number of resonators per slit
-a_x = W;
-L = 50e-3; %depth of metadiffuser
-e = 12e-3; %stock thickness
 
 %---- Check phase profile ----
 figure(1)
@@ -142,7 +142,7 @@ optgeo = unpackgeometry(G_opt,n);
 %---- Check optimised phase ----
 figure(1)
 hold on
-phasecheck = angle(MetadiffuserReflectionCoefficient(n,M, panel_repetitions,...
+phasecheck = angle(MetadiffuserReflectionCoefficient(n,...
     optgeo,optim_f,optim_f,df));
 plotPhaseStep(n,phasecheck);
 legend('goal','optimised')
@@ -172,23 +172,20 @@ switch answer
     return
 end
 
-optgeo.panel_thickness = L;
-save("optgeo.mat","optgeo") %output geometry variable to root dir.
-
 % ========================================================================
 %% ----          OBJECTIVE FUNCTION           ----
 function error = objectiveFunction(X)  %(X is geometry optimisation variable)
-    global targetphase n M optim_f df panel_repetitions
+    global targetphase n optim_f df
     % x contains geometry parameters
     % Calculate QRD and metadiffuser phases
     %Unpack geometry structure
     geometry = unpackgeometry(X,n);
     
-    metaR = MetadiffuserReflectionCoefficient(n,M, panel_repetitions,...
+    metaR = MetadiffuserReflectionCoefficient(n,...
         geometry,optim_f,optim_f,df);
     metaphase = angle(metaR);
     % Objective is the absolute error between phases
-    error = abs(metaphase - targetphase);
+    error = sum(abs(metaphase - targetphase));
 end
 
 % =========================================================================
@@ -286,16 +283,14 @@ end
 %==========================================================================
 %%                      CALCULATION FUNCTIONS
 
-function R = MetadiffuserReflectionCoefficient(n, M, panel_repetitions, geometry, f_min,f_max,df)
+function R = MetadiffuserReflectionCoefficient(n, geometry, f_min,f_max,df)
     % Function to calculate reflection coefficient
    
-    global stinson_constants panel_repetitions
-
+    global stinson_constants
+    M = 1; %number of resonators per slit 
     f_v = f_min:df:f_max;
     w = 2*pi*f_v;
-    
-    n = n*panel_repetitions;
-    
+       
     %% Constants
     rho_0 = stinson_constants.density; %kg/m^3 air density
     B_0 = stinson_constants.bulk_modulus; %Pa adiabatic bulk modulus
@@ -316,9 +311,7 @@ function R = MetadiffuserReflectionCoefficient(n, M, panel_repetitions, geometry
         l_c = geometry.cavity.lengths(indn); %x_dim
         h = geometry.slit.widths(indn); %x_dim
         a_y = geometry.slit.lengths(indn); %y_dim
-        
-        a = a_y/M; % Distance between resonators
-
+                
         S_0 = l_c + l_n + h;
         S_n = w_n;
         S_c = w_c;
@@ -367,7 +360,6 @@ function R = MetadiffuserReflectionCoefficient(n, M, panel_repetitions, geometry
         
         % Radiation correction
         d = l_c + l_n + h;
-        h = h;
         phi_t = h / d;
         m = 1:1:20; % Summation index
         delta_slit = h * phi_t * sum((sin(m*pi*phi_t).^2) ./ ((m*pi*phi_t).^3));
@@ -380,10 +372,10 @@ function R = MetadiffuserReflectionCoefficient(n, M, panel_repetitions, geometry
              ./ (sin(k_n * l_n) .* cos(k_c * l_c) - (k_n * deltal .* Z_n ./ Z_c) .* sin(k_n * l_n) .* sin(k_c * l_c) + (Z_n ./ Z_c) .* cos(k_n * l_n) .* sin(k_c * l_c));
         
         % Waveguide transfer matrix elements
-        T11 = cos(k_s * a/2);
-        T12 = 1i * Z_s .* sin(k_s * a/2);
-        T21 = 1i * sin(k_s * a/2) ./ Z_s;
-        T22 = cos(k_s * a/2);
+        T11 = cos(k_s * a_y/2);
+        T12 = 1i * Z_s .* sin(k_s * a_y/2);
+        T21 = 1i * sin(k_s * a_y/2) ./ Z_s;
+        T22 = cos(k_s * a_y/2);
         
         % Calculate transfer matrices for each frequency
         for ifreq = 1:length(f_v)
@@ -411,7 +403,7 @@ function R = MetadiffuserReflectionCoefficient(n, M, panel_repetitions, geometry
 end
 
 function [L, s_n, R_QRD] = QRDReflectionCoefficient(N,W,design_freq,f_min,f_max,df,rho_0,c_0)
-    global panel_repetitions
+
     %% Wavenumber vector
     f_v = (f_min:df:f_max)'; %transposed so that implicit expansion works on line 20
     w=2*pi*f_v;
@@ -421,7 +413,6 @@ function [L, s_n, R_QRD] = QRDReflectionCoefficient(N,W,design_freq,f_min,f_max,
     
     %% QRD depths
     n = (1:N);%vector of desired sequence length
-    n = repmat(n,1,panel_repetitions);
     s_n = mod(n.^2,N);
     lambda_0 = c_0./design_freq; %design wavelength in meters
     L = (s_n.*lambda_0)./(2*N); %well depths

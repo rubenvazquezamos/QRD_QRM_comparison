@@ -1,4 +1,8 @@
-function [pressure] = flat_plane(Freq,Geo,Probe,File,save_dlg)
+function [pressure] = QR_5(Freq,Geo,Probe,File,save_dlg)
+%
+% QR_5_test1.m
+%
+% Model exported on Oct 12 2025, 14:26 by COMSOL 6.0.0.318.
 
 %-------------------------------------------------------------------------%
 %% CALL COMSOL
@@ -10,30 +14,33 @@ import com.comsol.model.util.*
 
 model = ModelUtil.create('Model');
 
+
 model.component.create('comp1', true);
+
 
 %-------------------------------------------------------------------------%
 %% PARAMETERS
 disp(' -- Sending parameters')
 %-------------------------------------------------------------------------%
 
-model.param.set('L', num2str(Geo.D), 'Width of the flat plane');
-% model.param.set('Lw', '0.09[m]', 'Width of one well');
-model.param.set('Li', '0.01[m]', 'Width in between wells');
-% model.param.set('H', '0.3[m]', 'Height of the diffuser');
-% model.param.set('d1', '0[m]', 'Depth of well 1');
-% model.param.set('d2', '0.068[m]', 'Depth of well 2');
-% model.param.set('d3', '0.272[m]', 'Depth of well 3');
-% model.param.set('d4', '0.272[m]', 'Depth of well 4');
-% model.param.set('d5', '0.068[m]', 'Depth of well 5');
+model.param.set('L', num2str(Geo.panelLength), 'Length of the diffuser');
+model.param.set('Lw', num2str(Geo.wellWidth), 'Width of one well');
+model.param.set('Li', num2str(Geo.betweenWells), 'Width in between wells');
+model.param.set('H', '0.3[m]', 'Height of the diffuser');
+model.param.set('d1', '0[m]', 'Depth of well 1');
+model.param.set('d2', '0.068[m]', 'Depth of well 2');
+model.param.set('d3', '0.272[m]', 'Depth of well 3');
+model.param.set('d4', '0.272[m]', 'Depth of well 4');
+model.param.set('d5', '0.068[m]', 'Depth of well 5');
 % model.param.set('d6', '0.000001[m]', 'Depth of well 6');
 model.param.set('r_air', num2str(Probe.domain), 'Radius of the air domain (for single diffuser)');
-model.param.set('r0', '100[m]', 'Evaluation distance');
-model.param.set('Hair', '1[m]', 'Height of the air domain');
+% model.param.set('r0', '10[m]', 'Evaluation distance');
+% model.param.set('Hair', '1[m]', 'Height of the air domain');
 model.param.set('Hpml', '0.2[m]', 'Thickness of the PML');
 model.param.group.create('par2');
 model.param('par2').set('c0', '343[m/s]', 'Speed of sound');
 model.param('par2').set('rho0', '1.225[kg/m^3]', 'Density');
+model.param('par2').set('f0', '125[Hz]', 'Frequency parameter');
 model.param('par2').set('f_min', num2str(Freq.f_min));
 model.param('par2').set('f_max', num2str(Freq.f_max));
 model.param('par2').set('df', num2str(Freq.df));
@@ -56,6 +63,7 @@ disp(' -- Sending variables')
 %% GEOMETRY
 disp(' -- Build geometry')
 %-------------------------------------------------------------------------%
+
 model.component('comp1').geom.create('geom1', 2);
 
 model.component('comp1').geom('geom1').create('c1', 'Circle');
@@ -63,11 +71,35 @@ model.component('comp1').geom('geom1').feature('c1').set('layername', {'PML'});
 model.component('comp1').geom('geom1').feature('c1').setIndex('layer', '0.75', 0);
 model.component('comp1').geom('geom1').feature('c1').set('r', 'r_air');
 model.component('comp1').geom('geom1').feature('c1').set('angle', 180);
-model.component('comp1').geom('geom1').create('pol1', 'Polygon');
-model.component('comp1').geom('geom1').feature('pol1').set('type', 'open');
-model.component('comp1').geom('geom1').feature('pol1').set('source', 'table');
-model.component('comp1').geom('geom1').feature('pol1').set('table', {'-L/2' '0'; 'L/2' '0'});
+model.component('comp1').geom('geom1').create('r1', 'Rectangle');
+model.component('comp1').geom('geom1').feature('r1').active(false);
+model.component('comp1').geom('geom1').feature('r1').set('pos', {'-L/2+Li' '-d1'});
+model.component('comp1').geom('geom1').feature('r1').set('size', {'Lw' 'd1'});
+model.component('comp1').geom('geom1').create('r2', 'Rectangle');
+model.component('comp1').geom('geom1').feature('r2').set('pos', {'-L/2+2*Li+Lw' '-d2'});
+model.component('comp1').geom('geom1').feature('r2').set('size', {'Lw' 'd2'});
+model.component('comp1').geom('geom1').create('r3', 'Rectangle');
+model.component('comp1').geom('geom1').feature('r3').set('pos', {'-L/2+3*Li+2*Lw' '-d3'});
+model.component('comp1').geom('geom1').feature('r3').set('size', {'Lw' 'd3'});
+model.component('comp1').geom('geom1').create('r4', 'Rectangle');
+model.component('comp1').geom('geom1').feature('r4').set('pos', {'-L/2+4*Li+3*Lw' '-d4'});
+model.component('comp1').geom('geom1').feature('r4').set('size', {'Lw' 'd4'});
+model.component('comp1').geom('geom1').create('r5', 'Rectangle');
+model.component('comp1').geom('geom1').feature('r5').set('pos', {'-L/2+5*Li+4*Lw' '-d5'});
+model.component('comp1').geom('geom1').feature('r5').set('size', {'Lw' 'd5'});
+model.component('comp1').geom('geom1').create('pt1', 'Point');
+model.component('comp1').geom('geom1').feature('pt1').set('p', {'-L/2+Li' '0'});
+model.component('comp1').geom('geom1').nodeGroup.create('grp1');
+model.component('comp1').geom('geom1').nodeGroup('grp1').label('Wells');
+model.component('comp1').geom('geom1').nodeGroup('grp1').placeAfter('c1');
+model.component('comp1').geom('geom1').nodeGroup('grp1').add('r1');
+model.component('comp1').geom('geom1').nodeGroup('grp1').add('r2');
+model.component('comp1').geom('geom1').nodeGroup('grp1').add('r3');
+model.component('comp1').geom('geom1').nodeGroup('grp1').add('r4');
+model.component('comp1').geom('geom1').nodeGroup('grp1').add('r5');
 model.component('comp1').geom('geom1').run;
+model.component('comp1').geom('geom1').run('fin');
+
 
 %%% EXTRA CODE: visualise the geometry before going further with
 % approval input with the [Enter] key.
@@ -78,30 +110,32 @@ mphgeom(model,'geom1','facealpha',0.5);
 box on;
 % kk = input('Is the geometry valid?');clear kk;
 
+
 %-------------------------------------------------------------------------%
 %% PHYSICS
 disp(' -- Implementing physics')
 %-------------------------------------------------------------------------%
-
 model.component('comp1').physics.create('acpr', 'PressureAcoustics', 'geom1');
 model.component('comp1').physics('acpr').create('bpf1', 'BackgroundPressureField', 2);
-model.component('comp1').physics('acpr').feature('bpf1').selection.set([1 2 3]);
+model.component('comp1').physics('acpr').feature('bpf1').selection.set([1 2 3 4 5 6 7]);
 model.component('comp1').physics('acpr').create('imp1', 'Impedance', 1);
-model.component('comp1').physics('acpr').feature('imp1').selection.set([2 6]);
+model.component('comp1').physics('acpr').feature('imp1').selection.set([2 25]);
+
+
 model.component('comp1').physics('acpr').feature('bpf1').set('p', 'p_inc');
 model.component('comp1').physics('acpr').feature('bpf1').set('dir', [0; -1; 0]);
 model.component('comp1').physics('acpr').feature('bpf1').set('phi', 'phi');
 model.component('comp1').physics('acpr').feature('bpf1').set('pamp', 1);
 model.component('comp1').physics('acpr').feature('bpf1').set('c_mat', 'from_mat');
-
 %-------------------------------------------------------------------------%
 %% PML
 disp(' -- Set PML')
 %-------------------------------------------------------------------------%
 
 model.component('comp1').coordSystem.create('pml1', 'PML');
-model.component('comp1').coordSystem('pml1').selection.set([1 3]);
+model.component('comp1').coordSystem('pml1').selection.set([1 5]);
 model.component('comp1').coordSystem('pml1').set('ScalingType', 'Cylindrical');
+
 
 %-------------------------------------------------------------------------%
 %% MATERIAL
@@ -120,6 +154,7 @@ model.component('comp1').material('mat1').propertyGroup.create('RefractiveIndex'
 model.component('comp1').material('mat1').propertyGroup.create('NonlinearModel', 'Nonlinear model');
 model.component('comp1').material('mat1').propertyGroup.create('idealGas', 'Ideal gas');
 model.component('comp1').material('mat1').propertyGroup('idealGas').func.create('Cp', 'Piecewise');
+
 
 model.component('comp1').material('mat1').label('Air');
 model.component('comp1').material('mat1').set('family', 'air');
@@ -157,6 +192,9 @@ model.component('comp1').material('mat1').propertyGroup('def').func('an2').set('
 model.component('comp1').material('mat1').propertyGroup('def').func('an2').set('fununit', 'Pa*s');
 model.component('comp1').material('mat1').propertyGroup('def').func('an2').set('argunit', {'K'});
 model.component('comp1').material('mat1').propertyGroup('def').func('an2').set('plotargs', {'T' '200' '1600'});
+model.component('comp1').material('mat1').propertyGroup('def').set('thermalexpansioncoefficient', '');
+model.component('comp1').material('mat1').propertyGroup('def').set('molarmass', '');
+model.component('comp1').material('mat1').propertyGroup('def').set('bulkviscosity', '');
 model.component('comp1').material('mat1').propertyGroup('def').set('thermalexpansioncoefficient', {'alpha_p(pA,T)' '0' '0' '0' 'alpha_p(pA,T)' '0' '0' '0' 'alpha_p(pA,T)'});
 model.component('comp1').material('mat1').propertyGroup('def').set('molarmass', '0.02897[kg/mol]');
 model.component('comp1').material('mat1').propertyGroup('def').set('bulkviscosity', 'muB(T)');
@@ -171,6 +209,10 @@ model.component('comp1').material('mat1').propertyGroup('def').set('thermalcondu
 model.component('comp1').material('mat1').propertyGroup('def').set('soundspeed', 'cs(T)');
 model.component('comp1').material('mat1').propertyGroup('def').addInput('temperature');
 model.component('comp1').material('mat1').propertyGroup('def').addInput('pressure');
+model.component('comp1').material('mat1').propertyGroup('RefractiveIndex').set('n', '');
+model.component('comp1').material('mat1').propertyGroup('RefractiveIndex').set('ki', '');
+model.component('comp1').material('mat1').propertyGroup('RefractiveIndex').set('n', '');
+model.component('comp1').material('mat1').propertyGroup('RefractiveIndex').set('ki', '');
 model.component('comp1').material('mat1').propertyGroup('RefractiveIndex').set('n', '');
 model.component('comp1').material('mat1').propertyGroup('RefractiveIndex').set('ki', '');
 model.component('comp1').material('mat1').propertyGroup('RefractiveIndex').set('n', {'1' '0' '0' '0' '1' '0' '0' '0' '1'});
@@ -193,6 +235,7 @@ model.component('comp1').material('mat1').materialType('nonSolid');
 %% STUDY
 disp(' -- Creating study')
 %-------------------------------------------------------------------------%
+
 model.study.create('std1');
 model.study('std1').create('freq', 'Frequency');
 model.sol.create('sol1');
@@ -210,26 +253,8 @@ model.study('std1').feature('freq').set('plist', 'range(f_min,df,f_max)');
 %% MESH
 disp(' -- Build mesh')
 %-------------------------------------------------------------------------%
+
 model.component('comp1').mesh.create('mesh1');
-
-
-model.component('comp1').mesh('mesh1').create('size1', 'Size');
-model.component('comp1').mesh('mesh1').create('se1', 'SizeExpression');
-model.component('comp1').mesh('mesh1').create('ftri1', 'FreeTri');
-model.component('comp1').mesh('mesh1').feature('size1').selection.geom('geom1', 2);
-model.component('comp1').mesh('mesh1').feature('size1').selection.set([1 2 3]);
-model.component('comp1').mesh('mesh1').feature('se1').selection.geom('geom1', 2);
-model.component('comp1').mesh('mesh1').feature('se1').selection.set([2]);
-model.component('comp1').mesh('mesh1').feature('ftri1').selection.geom('geom1', 2);
-model.component('comp1').mesh('mesh1').feature('ftri1').selection.set([1 2 3]);
-model.component('comp1').mesh('mesh1').feature('size1').set('custom', 'on');
-model.component('comp1').mesh('mesh1').feature('size1').set('hmax', 'c0/f_max/5');
-model.component('comp1').mesh('mesh1').feature('size1').set('hmaxactive', true);
-model.component('comp1').mesh('mesh1').feature('size1').set('hmin', 'c0/f_max/10');
-model.component('comp1').mesh('mesh1').feature('size1').set('hminactive', false);
-model.component('comp1').mesh('mesh1').feature('se1').set('evaltype', 'initialexpression');
-model.component('comp1').mesh('mesh1').feature('se1').set('sizeexpr', 'subst(real(acpr.c_c),acpr.freq,freqmax)/freqmax/5');
-model.component('comp1').mesh('mesh1').feature('se1').set('studystep', 'std1/freq');
 
 %-------------------------------------------------------------------------%
 %% SOLVE
@@ -245,12 +270,12 @@ disp(' -- Generate plots')
 %-------------------------------------------------------------------------%
 
 %-------------------------------------------------------------------------%
-
 %% GET DATA/PROBING
 disp(' -- Probing')
 %-------------------------------------------------------------------------%
 pressure = mphinterp(model,'acpr.p_s','coord',Probe.Coordinates);
 
+%-------------------------------------------------------------------------%
 %% SAVE
 disp(' -- Save model')
 %-------------------------------------------------------------------------%
@@ -266,7 +291,7 @@ if save_dlg == true
     end
 end
 
-mphsave(model,[File.Path,filesep,File.Tag2,File.Extension]);
+mphsave(model,[File.Path,filesep,File.Tag1,File.Extension]);
 
 disp(' -- DONE')
 

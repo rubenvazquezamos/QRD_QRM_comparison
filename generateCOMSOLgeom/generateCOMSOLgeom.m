@@ -22,7 +22,7 @@ end
 
 offset = e; %initialise cavity x position
 D = 0; %initialise panel size
-L = geometry.L; % panel height
+L = geometry.L + geometry.e; % panel height
 %% COMSOL MODEL
 
 import com.comsol.model.*

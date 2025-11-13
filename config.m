@@ -1,10 +1,11 @@
 %% FREQUENCY
 %-------------------------------------------------------------------------%
-Freq.f_min = 250;                                  % Minimum Freq of interest
-Freq.f_max = 4000;                               % Maximum Freq of interest
+Freq.f_min = 250;
+Freq.f_max = 4000;
 Freq.df = 50;                                    % Freq discretization
-Freq.Vector = (Freq.f_min:Freq.df:Freq.f_max);    % Freq vector
+Freq.Vector = (Freq.f_min:Freq.df:Freq.f_max);
 Freq.Nf = numel(Freq.Vector);                   % Number of frequencies
+Freq.designFreq = 500; %QRD design frequency
 
 %% GEOMETRY
 %-------------------------------------------------------------------------%
@@ -12,25 +13,17 @@ Geo.numberWells = 5; %prime number used to generate s_n
 Geo.wellWidth = 7e-2;
 Geo.betweenWells = 1e-2;
 Geo.panelLength = Geo.numberWells*(Geo.wellWidth+Geo.betweenWells)...
-    +Geo.betweenWells; %width of panel in m
-Geo.stockThickness = 12e-3; %stock thickness
+    +Geo.betweenWells;
+Geo.panelDepth = 3e-2;
+Geo.stockThickness = 12e-3; %stock used for milling panel
 %-------------------------------------------------------------------------%
 
-%% COMSOL FILE INFORMATION
-%-------------------------------------------------------------------------%
-File.Path = [pwd,filesep,'Models'];
-File.Tag1 = 'Comsol_QRD5';
-File.Tag2 = 'flat_plane';
-File.Tag3 = 'optgeo.mphbin';
-File.Extension = '.mph';
+%% ANGLES
+% TMM: -pi/2 to pi/2
+% COMSOL: 0 to pi
+Angle.restriction = 0; %restricts extreme observer angles
+Angle.theta_min = -pi/2;
+Angle.theta_max = pi/2;
+Angle.Resolution = 181;
+Angle.theta_Vector = linspace(Angle.theta_min,Angle.theta_max,Angle.Resolution);
 
-%% COMSOL PROBE INFORMATION
-%-------------------------------------------------------------------------%
-Probe.domain = 4; %radius of air domain in meters
-Probe.radius = 3; %radius of arc in meters
-Probe.theta_min =  0; %arc starting angle
-Probe.theta_max = pi; %arc end angle
-Probe.Resolution = 181;
-Probe.theta_vector = linspace(Probe.theta_min,Probe.theta_max,Probe.Resolution);
-Probe.Coordinates(1,:) = Probe.radius*cos(Probe.theta_vector); %Probe x coordinates
-Probe.Coordinates(2,:) = Probe.radius*sin(Probe.theta_vector); %Probe y coordinates

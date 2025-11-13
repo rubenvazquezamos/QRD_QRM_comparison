@@ -1,36 +1,56 @@
+% QRD QRM COMPARISON
+% 
+% This script optimises a geometry and later generates it in COMSOL
+% to compare diffusion coefficients.
+% % Scripts are Loosely Coupled, so variables are may be restated
+% across scripts. config.m file ensures consistency of some parameters.
+%
+% HOW TO USE
 % 1 Run COMSOL to MATLAB LiveLink
 % 2 Then run this script.
-
-% This script optimises a geometry and later generates it in COMSOL
-% to compare diffusion coefficients
 % 
-% Scripts are Loosely Coupled, so variables are may be restated
-% across scripts.
-% config.m file ensures consistency of some parameters across scripts
 
-%% EXECUTE SCRIPTS
+%% OPTIMISE GEOMETRY
 LatexPreamble()
 run("config.m")
 run("optimiseGeometry.m")
-
+optgeo.panel_thickness = Geo.panelDepth;
+optgeo.stock_thickness = Geo.stockThickness;
+save("optgeo.mat","optgeo") %save optimised geometry
 clear all %information hiding
+
+%% GENERATE COMSOL GEOMETRY
 load("optgeo.mat")
-
 run("config")
-geometry = structureGeometry(optgeo);
-QRM_geometry = generateCOMSOLgeom(geometry,Geo.numberWells,Geo.stockThickness);
-QRM_geometry.resetHist %compact model history
-QRM_geometry.geom('geom1').export('optgeo.mphbin') %geometry file for import
+geometry = prepGeometryforCOMSOL(optgeo);
+QRMgeometryCOMSOL = generateCOMSOLgeom(geometry,Geo.numberWells,Geo.stockThickness);
+QRMgeometryCOMSOL.resetHist %compact model history
+QRMgeometryCOMSOL.geom('geom1').export('optgeo.mphbin') %geometry file for import
 
-run("buildCOMSOLmodels.m");
+%% OBTAIN SCATTERED PRESSURE
+run("buildCOMSOLmodels.m")
+run("QRD_TMM.m")
+run("QRM_TMM.m")
+run("flat_TMM.m")
 
-%% PLOTS
+%% DIFFUSION COEFFICIENT
 
+model_names = {'QRD_TMM', 'QRD_COMSOL', 'QRM_TMM', 'QRM_COMSOL', 'flat_TMM', 'flat_COMSOL'};
 
+for k = 1:numel(model_names)
+    delta.(model_names{k}) = calculateDiffusionCoefficient(Ps.(model_names{k}));
+    deltan.(model_names{k}) = normaliseDiffusionCoefficient(delta.(model_names{k}));
+end
 
-%% FUNCTIONS
+%% RESULTS
+for k = 1:numel(model_names)
+    plot(Freq.Vector,delta.(model_names{k}))
+    hold on
+end
+hold off
+%% ----               FUNCTIONS              ----
 
-function geometry = structureGeometry(optgeo)
+function geometry = prepGeometryforCOMSOL(optgeo)
     
     geometry = struct();
     geometry.neck.l_n = optgeo.neck.lengths;
@@ -40,6 +60,7 @@ function geometry = structureGeometry(optgeo)
     geometry.slit.hh = optgeo.slit.widths;
     geometry.slit.a_y = optgeo.slit.lengths;
     geometry.L = optgeo.panel_thickness;
+    geometry.e = optgeo.stock_thickness;
 
 end
 
@@ -55,6 +76,40 @@ function [] = LatexPreamble(~) % Latex Preamble
     clear; clear global *; clc; warning off;
 end
 
+
+function Rbig = discretizeDiffuserReflectionCoefficient(N,x,R)
+    % INPUTS
+    %   N: number of wells and prime number
+    %   x: vector of points along diffuser surface.
+    %   R: matrix of reflection coefficient values.
+    % 
+    % OUTPUTS
+    %   Rbig: matrix of spatially discretized reflection coefficient values.
+            
+        augmentation_index = length(x)./N;
+        Rbig = repelem(R, 1, augmentation_index);    
+end
+
+function Ps = fftfraunhofer(theta,Rs,k,x)
+    % ======================================
+    %
+    %   PS = FFTFRAUNHOFER(THETA,RS,K,X)
+    %
+    %   FFTFRAUNHOFER calculates the far field PS using the Fraunhofer integral
+    %   of a surface with reflection RS(X) at wavenumber k and at angles
+    %   theta
+    %
+    %   Noé Jiménez, Salford, October 2016
+    %
+    %=======================================
+    na = length(x);
+    dx = x(2)-x(1);
+    Ps = zeros(size(theta));
+    for ia=1:na
+        Ps = Ps+Rs(ia).*exp(1i*k*x(ia)*sin(theta))*dx; 
+    end
+
+end
 
 function delta = calculateDiffusionCoefficient(Ps,theta,ri)
     % INPUTS:
@@ -82,37 +137,13 @@ function delta = calculateDiffusionCoefficient(Ps,theta,ri)
 
 end
 
-function Rbig = discretizeDiffuserReflectionCoefficient(N,x,R)
-    % INPUTS
-    %   N: number of wells and prime number
-    %   x: vector of points along diffuser surface.
-    %   R: matrix of reflection coefficient values.
-    % 
-    % OUTPUTS
-    %   Rbig: matrix of spatially discretized reflection coefficient values.
-            
-        augmentation_index = length(x)./N;
-        Rbig = repelem(R, 1, augmentation_index);    
-end
+function delta_n = normaliseDiffusionCoefficient(delta, deltaf)
+    %INPUTS
+    % delta: diffusion coefficient of reflector
+    % deltaf: diffusion coeffficient of flat plane
+    %
+    %OUTPUT
+    % delta_n: normalised diffusion coefficient
 
-
-function Ps = fftfraunhofer(theta,Rs,k,x)
-    % ======================================
-    %
-    %   PS = FFTFRAUNHOFER(THETA,RS,K,X)
-    %
-    %   FFTFRAUNHOFER calculates the far field PS using the Fraunhofer integral
-    %   of a surface with reflection RS(X) at wavenumber k and at angles
-    %   theta
-    %
-    %   Noé Jiménez, Salford, October 2016
-    %
-    %=======================================
-    na = length(x);
-    dx = x(2)-x(1);
-    Ps = zeros(size(theta));
-    for ia=1:na
-        Ps = Ps+Rs(ia).*exp(1i*k*x(ia)*sin(theta))*dx; 
-    end
-
+    delta_n = (delta - deltaf)./(1-deltaf);
 end

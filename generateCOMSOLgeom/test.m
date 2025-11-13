@@ -15,4 +15,6 @@ geometry.slit.hh = [10 20 30];
 geometry.slit.a_y = [21 21 21];
 geometry.L = 22;
 
-geo_generator(geometry,3,1)
+e = 12e-3;
+
+generateCOMSOLgeom(geometry,3,e)
