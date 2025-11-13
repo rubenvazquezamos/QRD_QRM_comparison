@@ -1,18 +1,28 @@
-function out = generateCOMSOLgeom(geometry,N,e)
+function out = generateCOMSOLgeom(geometry)
 %
-% This function generates an M=1 Acoustic Metadiffuser geometry with n unit
+% This function generates an Acoustic Metadiffuser geometry with
+% a specified number of unit cells.
 % cells.
 %Inputs:
-% geometry - structure. Metadiffuser geometry (see test.m)
-% N - double. Number of cells
-% e - double. Stock thickness
+% geometry - strut() with fields
+%   slit, cavity, neck, (with subfields 'widths' and 'lengths'.) 
+%   stockThickness
+%   lidThickness
+%   baseThickness
+%   panelLength
+%   panelWidth
+%   numberWells  
 %
-%Output
+% Output
 %
-% COMSOL model
+% COMSOL model of Metadiffuser geometry
 %
 
 %% MATLAB variables
+e_stock = geometry.stockThickness;
+e_base = geometry.baseThickness;
+
+N = geometry.numberWells;
 
 %rectangle labels
 
@@ -20,9 +30,9 @@ for r_index = 1:3*N
     r_label(r_index) = "r"+ num2str(r_index);
 end
 
-offset = e; %initialise cavity x position
-D = 0; %initialise panel size
-L = geometry.L + geometry.e; % panel height
+offset = geometry.stockThickness; %initialise cavity x position
+D = 0; %initialise panel length
+L = geometry.panelWidth + geometry.baseThickness; %recall w_c = L - lidThickness
 %% COMSOL MODEL
 
 import com.comsol.model.*
@@ -41,12 +51,12 @@ model.component('comp1').geom.create('geom1', 2);
 
 for ii = 1:N %rectangle loop
     
-    l_c = geometry.cavity.l_c(ii);
-    w_c = geometry.cavity.w_c(ii);
-    l_n = geometry.neck.l_n(ii);
-    w_n = geometry.neck.w_n(ii);
-    hh = geometry.slit.hh(ii);
-    a_y = geometry.slit.a_y(ii);
+    l_c = geometry.cavity.lengths(ii);
+    w_c = geometry.cavity.widths(ii);
+    l_n = geometry.neck.lengths(ii);
+    w_n = geometry.neck.widths(ii);
+    hh = geometry.slit.widths(ii);
+    a_y = geometry.slit.lengths(ii);
     
 
     index = 3.*(ii-1) + 1;
@@ -58,15 +68,16 @@ for ii = 1:N %rectangle loop
     model.param.set(['l_n', num2str(ii)], num2str(l_n,'%.10f'), 'length neck');
     model.param.set(['a_y', num2str(ii)], num2str(a_y,'%.10f'), 'slit width');
     model.param.set(['hh', num2str(ii)], num2str(hh,'%.10f'), 'slit length');
-    model.param.set('e', num2str(e,'%.10f'), 'stock thickness');
-    model.param.set('L', [num2str(L)], 'panel height');
+    model.param.set('e_stock', num2str(e_stock,'%.10f'), 'stock thickness');
+    model.param.set('e_base', num2str(e_base,'%.10f'), 'base thickness');
+    model.param.set('L', [num2str(L)], 'panel width');
     model.param.label('dimensions');
     
     %% Definitions
     %Cavity
     model.component('comp1').geom('geom1').create( num2str(r_label(index)) , 'Rectangle');
     model.component('comp1').geom('geom1').feature( num2str(r_label(index)) ).label(['cavity', num2str(ii)]);
-    model.component('comp1').geom('geom1').feature( num2str(r_label(index)) ).set('pos', {num2str(offset,'%.10f') 'e'});
+    model.component('comp1').geom('geom1').feature( num2str(r_label(index)) ).set('pos', {num2str(offset,'%.10f') 'e_base'});
     model.component('comp1').geom('geom1').feature( num2str(r_label(index)) ).set('size', {['l_c',num2str(ii)], ['w_c',num2str(ii)]});
     
     offset = ['l_c',num2str(ii), ' + ', num2str(offset,'%.10f')]; %augment offset
@@ -76,7 +87,7 @@ for ii = 1:N %rectangle loop
     model.component('comp1').geom('geom1').create( num2str(r_label(index+1)) , 'Rectangle');
     model.component('comp1').geom('geom1').feature( num2str(r_label(index+1)) ).label(['neck', num2str(ii)]);
     model.component('comp1').geom('geom1').feature( num2str(r_label(index+1)) ).set( 'pos', {...
-            [num2str(offset,'%.10f')] ['(w_c', num2str(ii),'-w_n',num2str(ii),')/2+e']...
+            [num2str(offset,'%.10f')] ['(w_c', num2str(ii),'-w_n',num2str(ii),')/2+e_base']...
             } );
     model.component('comp1').geom('geom1').feature( num2str(r_label(index+1)) ).set('size', {['l_n',num2str(ii)] ['w_n',num2str(ii)]});
     
@@ -86,17 +97,17 @@ for ii = 1:N %rectangle loop
     %Slit
     model.component('comp1').geom('geom1').create( num2str(r_label(index+2)) , 'Rectangle');
     model.component('comp1').geom('geom1').feature( num2str(r_label(index+2)) ).label(['slit', num2str(ii)]);
-    model.component('comp1').geom('geom1').feature( num2str(r_label(index+2)) ).set('pos', {num2str(offset,'%.10f') 'e'});
+    model.component('comp1').geom('geom1').feature( num2str(r_label(index+2)) ).set('pos', {num2str(offset,'%.10f') 'e_base'});
     model.component('comp1').geom('geom1').feature( num2str(r_label(index+2)) ).set('size', {['hh',num2str(ii)] ['a_y',num2str(ii)]});
     
-    offset = ['e + hh',num2str(ii), '+', num2str(offset,'%.10f')]; %augment offset
+    offset = ['e_stock + hh',num2str(ii), '+', num2str(offset,'%.10f')]; %augment offset
     
     %enclosing box
-    D = ['l_c',num2str(ii),'+ l_n',num2str(ii),'+ hh',num2str(ii), '+ e +', num2str(D)];  %augment panel size
+    D = ['l_c',num2str(ii),'+ l_n',num2str(ii),'+ hh',num2str(ii), '+ e_stock +', num2str(D)];  %augment panel length
     model.param.set('D', num2str(D,'%.10f'), 'panel length'); %set panel size
     mphgeom(model,'geom1','facealpha',0.5);
 end
-D = ['e +', num2str(D)];  %final agumentation
+D = ['e_stock +', num2str(D)];  %final agumentation
 model.param.set('D', num2str(D,'%.10f'), 'panel length'); %set panel size
 
 mphgeom(model,'geom1','facealpha',0.5);

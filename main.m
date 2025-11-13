@@ -13,17 +13,17 @@
 %% OPTIMISE GEOMETRY
 LatexPreamble()
 run("config.m")
+run("optimConfig.m")
 run("optimiseGeometry.m")
-optgeo.panel_thickness = Geo.panelDepth;
-optgeo.stock_thickness = Geo.stockThickness;
 save("optgeo.mat","optgeo") %save optimised geometry
 clear all %information hiding
+return
 
 %% GENERATE COMSOL GEOMETRY
-load("optgeo.mat")
 run("config")
-geometry = prepGeometryforCOMSOL(optgeo);
-QRMgeometryCOMSOL = generateCOMSOLgeom(geometry,Geo.numberWells,Geo.stockThickness);
+load("optgeo.mat")
+geoCOMSOL = prepCOMSOLgeom(optgeo,Geo);
+QRMgeometryCOMSOL = generateCOMSOLgeom(geoCOMSOL);
 QRMgeometryCOMSOL.resetHist %compact model history
 QRMgeometryCOMSOL.geom('geom1').export('optgeo.mphbin') %geometry file for import
 
@@ -48,20 +48,27 @@ for k = 1:numel(model_names)
     hold on
 end
 hold off
+
+
 %% ----               FUNCTIONS              ----
 
-function geometry = prepGeometryforCOMSOL(optgeo)
+function geometry = prepCOMSOLgeom(optgeo,Geo)
     
     geometry = struct();
-    geometry.neck.l_n = optgeo.neck.lengths;
-    geometry.neck.w_n = optgeo.neck.widths;
-    geometry.cavity.w_c = optgeo.cavity.widths;
-    geometry.cavity.l_c = optgeo.cavity.lengths;
-    geometry.slit.hh = optgeo.slit.widths;
-    geometry.slit.a_y = optgeo.slit.lengths;
-    geometry.L = optgeo.panel_thickness;
-    geometry.e = optgeo.stock_thickness;
 
+    geometry.neck.lengths = optgeo.neck.lengths;
+    geometry.neck.widths = optgeo.neck.widths;
+    geometry.cavity.widths = optgeo.cavity.widths;
+    geometry.cavity.lengths = optgeo.cavity.lengths;
+    geometry.slit.widths = optgeo.slit.widths;
+    geometry.slit.lengths = optgeo.slit.lengths;
+
+    % add extra required parameters
+    geometry.stockThickness = Geo.stockThickness;
+    geometry.panelLength = Geo.panelLength;
+    geometry.panelWidth = Geo.panelWidth;
+    geometry.numberWells = Geo.numberWells;
+    geometry.baseThickness = Geo.baseThickness;
 end
 
 function [] = LatexPreamble(~) % Latex Preamble

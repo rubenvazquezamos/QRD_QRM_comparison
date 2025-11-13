@@ -1,6 +1,7 @@
 %This code matches the phase of the reflection coefficient of a single AMD
 %well at a single frequency to that of a QRD.
 % Based on Phase_Optimisation v 2.1.2
+% needs config.m to run
 
 global targetphase n optim_f df stinson_constants
 
@@ -8,26 +9,15 @@ stinson_constants = generateStinsonConstants(); %stinson constants
 
 % =========================================================================
 
-%% QRD parameters
-n = Geo.numberWells; %number of wells and prime number
-design_freq = Freq.designFreq; 
-W = Geo.wellWidth; %well width
-D = Geo.panelLength;
+%% Obtain target phase
 rho_0 = stinson_constants.density;
 c_0 = stinson_constants.sound_speed;
-
-%% Optimisation parameters
+n = Geo.numberWells;
 df = 1; %frequency step
 optim_f = 2000; %optimisation frequency
-a_x = Geo.wellWidth; %unit cell length
-L = Geo.panelDepth;
-e = Geo.stockThickness;
-
-%% Obtain target phase
-[QRD_depths, s_n, Rgoal] = QRDReflectionCoefficient(n,W,design_freq,optim_f...
-    ,optim_f,df,rho_0,c_0);
+[QRD_depths, s_n, Rgoal] = QRDReflectionCoefficient(Geo.numberWells,...
+    Geo.wellWidth,Freq.designFreq,optim_f,optim_f,df,rho_0,c_0);
 targetphase = angle(Rgoal);
-
 
 %---- Check phase profile ----
 figure(1)
@@ -43,23 +33,7 @@ end
 
 % ========================================================================
 %% Optimisation setup
-% Inequality constraints
-% [w_n,l_n,w_c,l_c,h,a_y]
-A = [
-    0 0  1 0 0 -1;
-    1 0 -1 0 0  0;
-                  ];
-b = [0; 0];
-
-% Equality constraints
-% [w_n,l_n,w_c,l_c,h,a_y]
-Aeq = [
-        0 0 0 0 0 1;
-        0 0 1 0 0 0
-        0 1  0 1 1  0
-                    ];
-
-beq = [L; L-e, ; a_x];
+run('optimConfig.m')
 
 % ---- Build full constraint matrices ----
 inequality_coefficients = [];
@@ -106,14 +80,14 @@ switch ineqconstraints
     inequality_constants = [];
 end
 
-force = questdlg("force initial guess in ballpark?");
-switch force
-    case 'Yes'
-        % positions: [w_n,l_n,w_c,l_c,h,a_y]
-        initialguess = [5e-3 20e-3 L 25e-3 15e-5 L];
-        initialguess = repmat(initialguess,1,n);
-    case 'No'
-end
+% force = questdlg("force initial guess in ballpark?");
+% switch force
+%     case 'Yes'
+%         % positions: [w_n,l_n,w_c,l_c,h,a_y]
+%         initialguess = [5e-3 20e-3 L 25e-3 15e-5 L];
+%         initialguess = repmat(initialguess,1,n);
+%     case 'No'
+% end
 
 randomise = questdlg("randomise initial guess?");
 switch randomise
@@ -124,11 +98,10 @@ switch randomise
 end
 
 % =======================================================================
-%% fmincon
+%% Call fmincon to perform Optimisation
 options = optimoptions('fmincon','Display','iter','PlotFcn',{@optimplotstepsize...
 ,@optimplotfval,@optimplotx},'MaxFunctionEvaluations',...
-500*length(initialguess(:)),'FunctionTolerance',1e-5,'Algorithm','sqp');
-
+50000*length(initialguess(:)),'FunctionTolerance',1e-7,'Algorithm','interior-point');
 % x = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options)
 
 [G_opt, fval] =fmincon(@objectiveFunction,initialguess,inequality_coefficients...
@@ -161,15 +134,15 @@ table = geotable(optgeo);
 disp(table)
 
 figure()
-spaceBetweenCellsinGraphic = 100e-3;
+spaceBetweenCellsinGraphic = 10e-3;
 geomchecker(optgeo,n,spaceBetweenCellsinGraphic);
 answer = questdlg('Feasible geometry?');
 
 switch answer
     case 'Yes'
     case 'No'
-    disp('geometry deemed infeasible by user')
-    return
+        disp('geometry deemed infeasible by user')
+        return
 end
 
 % ========================================================================
