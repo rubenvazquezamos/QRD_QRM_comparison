@@ -92,8 +92,8 @@ end
 randomise = questdlg("randomise initial guess?");
 switch randomise
     case 'Yes'
-        random_factor = abs(randn(1,1,"double"));
-        initialguess = initialguess.*random_factor;
+        initialguess = abs(rand(size(initialguess),"double"));
+        initialguess = initialguess*1e-2; %scale initial guess
     case 'No'
 end
 
@@ -101,7 +101,8 @@ end
 %% Call fmincon to perform Optimisation
 options = optimoptions('fmincon','Display','iter','PlotFcn',{@optimplotstepsize...
 ,@optimplotfval,@optimplotx},'MaxFunctionEvaluations',...
-50000*length(initialguess(:)),'FunctionTolerance',1e-7,'Algorithm','interior-point');
+50000*length(initialguess(:)),'MaxIterations',50000*length(initialguess(:)),...
+'FunctionTolerance',1e-7,'StepTolerance',1e-14,'Algorithm','interior-point');
 % x = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options)
 
 [G_opt, fval] =fmincon(@objectiveFunction,initialguess,inequality_coefficients...
@@ -394,7 +395,7 @@ function [L, s_n, R_QRD] = QRDReflectionCoefficient(N,W,design_freq,f_min,f_max,
     %% Impedance of QWR (no losses)
     z = rho_0.*c_0; %specific acoustic impedance of air at 20degC
     Z_0 = z./W; %characteristic impedance of slit? Careful. This goes to infinity when slit is infinitely thin.
-    Zw = 1i.*Z_0.*cot(L.*k);  %array is calculated by implicit expansion
+    Zw = -1i.*Z_0.*cot(L.*k);  %array is calculated by implicit expansion
     
     %% Matrices
     R_QRD = ((Zw./Z_0)-1)./((Zw./Z_0)+1);
