@@ -2,6 +2,13 @@
 % min values should be entered as -min into matrix
 % max values are positive
 
+options = optimoptions('fmincon','Display','iter','PlotFcn',{@optimplotstepsize...
+,@optimplotfval,@optimplotx},'MaxFunctionEvaluations',...
+500*length(initialguess(:)),'MaxIterations',500*length(initialguess(:)),...
+'FunctionTolerance',1e-7,'StepTolerance',1e-14,'Algorithm','interior-point');
+
+
+
 a_x = Geo.panelLength./Geo.numberWells; %unit cell length
 L = Geo.panelWidth;
 e_l = Geo.lidThickness;

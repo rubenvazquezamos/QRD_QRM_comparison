@@ -110,10 +110,6 @@ end
 
 % =======================================================================
 %% Call fmincon to perform Optimisation
-options = optimoptions('fmincon','Display','iter','PlotFcn',{@optimplotstepsize...
-,@optimplotfval,@optimplotx},'MaxFunctionEvaluations',...
-500*length(initialguess(:)),'MaxIterations',500*length(initialguess(:)),...
-'FunctionTolerance',1e-7,'StepTolerance',1e-14,'Algorithm','interior-point');
 
 % x = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options)
 
