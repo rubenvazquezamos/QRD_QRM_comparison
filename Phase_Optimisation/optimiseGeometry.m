@@ -80,33 +80,37 @@ switch ineqconstraints
     inequality_constants = [];
 end
 
-% genetic = questdlg("run genetic algorithm to find initial guess?");
-% switch genetic
-%     case 'Yes'
-%         % positions: [w_n,l_n,w_c,l_c,h,a_y]
-%         initialguess = ga(@objectiveFunction,30,[],[],equality_coefficients,...
-%             equality_constants,lower_bounds,upper_bounds);
-%         disp(initialguess);
-%     case 'No'
-% end
-
-% randomise = questdlg("randomise initial guess?");
-% switch randomise
-%     case 'Yes'
-%         initialguess = abs(rand(size(initialguess),"double"));
-%         initialguess = initialguess.*1e-3; %scale initial guess       
-%     case 'No'
-% end
-
-
-randomise = questdlg("force ballpark initial guess?");
-switch randomise
+genetic = questdlg("run genetic algorithm to find initial guess?");
+switch genetic
     case 'Yes'
-        initialguess = cell2mat(flattenStruct2Cell(load('optgeo1.mat')));
-        initialguess = initialguess';
-        initialguess = initialguess(:); %ballpark initial guess
-     case 'No'
+        % positions: [w_n,l_n,w_c,l_c,h,a_y]
+        initialguess = ga(@objectiveFunction,30,[],[],equality_coefficients,...
+            equality_constants,lower_bounds,upper_bounds);
+        disp(initialguess);
+    case 'No'
+
+        randomise = questdlg("randomise initial guess?");
+        switch randomise
+        case 'Yes'
+            initialguess = abs(rand(size(initialguess),"double"));
+            initialguess = initialguess.*1e-3; %scale initial guess       
+        case 'No'
+
+            force = questdlg("force ballpark initial guess?");
+            switch force
+            case 'Yes'
+                initialguess = cell2mat(flattenStruct2Cell(load('optgeo1.mat')));
+                initialguess = initialguess';
+                initialguess = initialguess(:); %ballpark initial guess
+             case 'No'
+            
+            end
+
+        end
 end
+
+
+
 
 % =======================================================================
 %% Call fmincon to perform Optimisation

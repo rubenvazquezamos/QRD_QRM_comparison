@@ -18,6 +18,7 @@ rng("shuffle") %initialise random number generator
 run("optimiseGeometry.m")
 save("optgeo.mat","optgeo") %save optimised geometry
 disp(initialguess)
+
 return
 
 clear all %information hiding
