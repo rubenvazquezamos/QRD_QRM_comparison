@@ -80,29 +80,37 @@ switch ineqconstraints
     inequality_constants = [];
 end
 
-% force = questdlg("force initial guess in ballpark?");
-% switch force
-%     case 'Yes'
-%         % positions: [w_n,l_n,w_c,l_c,h,a_y]
-%         initialguess = [5e-3 20e-3 L 25e-3 15e-5 L];
-%         initialguess = repmat(initialguess,1,n);
-%     case 'No'
-% end
+genetic = questdlg("run genetic algorithm for initial guess?");
+switch genetic
+    case 'Yes'
+        % positions: [w_n,l_n,w_c,l_c,h,a_y]
+        initialguess = ga(@objectiveFunction,30);
+        %normalise initial guess
+        initialguess = abs(initialguess);
+        initialguess = initialguess./max(initialguess(:));
+        
+        disp(initialguess);
+    case 'No'
+end
 
 randomise = questdlg("randomise initial guess?");
 switch randomise
     case 'Yes'
+        rng("shuffle") %initialise random number generator
         initialguess = abs(rand(size(initialguess),"double"));
-        initialguess = initialguess*1e-2; %scale initial guess
+        initialguess = initialguess*1e-2; %scale initial guess       
     case 'No'
 end
+
 
 % =======================================================================
 %% Call fmincon to perform Optimisation
 options = optimoptions('fmincon','Display','iter','PlotFcn',{@optimplotstepsize...
 ,@optimplotfval,@optimplotx},'MaxFunctionEvaluations',...
-50000*length(initialguess(:)),'MaxIterations',50000*length(initialguess(:)),...
-'FunctionTolerance',1e-7,'StepTolerance',1e-14,'Algorithm','interior-point');
+5000*length(initialguess(:)),'MaxIterations',500*length(initialguess(:)),...
+'FunctionTolerance',1e-7,'StepTolerance',1e-14,'Algorithm','interior-point',...
+'FiniteDifferenceStepSize',1e-3,'UseParallel',true);
+
 % x = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options)
 
 [G_opt, fval] =fmincon(@objectiveFunction,initialguess,inequality_coefficients...
@@ -159,7 +167,7 @@ function error = objectiveFunction(X)  %(X is geometry optimisation variable)
         geometry,optim_f,optim_f,df);
     metaphase = angle(metaR);
     % Objective is the absolute error between phases
-    error = sum(abs(metaphase - targetphase));
+    error = sum((metaphase - targetphase).^2);
 end
 
 % =========================================================================
@@ -201,41 +209,41 @@ end
 
 
 function geomchecker(geometry,n, e)
-%creates graph of geometry for user validation
-% positions: [w_n,l_n,w_c,l_c,h,a_y] 
-
-figure()
-hold on
-% Variable initialisation
-offset = 0; %cumulative offset
-cavx = 0; %starting position
-
-for ii = 1:n
-
-    w_n = geometry.neck.widths(ii); %y_dim
-    l_n = geometry.neck.lengths(ii); %x_dim
-    w_c = geometry.cavity.widths(ii); %y_dim
-    l_c = geometry.cavity.lengths(ii); %x_dim
-    h = geometry.slit.widths(ii); %x_dim
-    a_y = geometry.slit.lengths(ii); %y_dim
+    %creates graph of geometry for user validation
+    % positions: [w_n,l_n,w_c,l_c,h,a_y] 
     
-    cavx = offset;
-    cavy = 0;
-    offset = offset+l_c;
-    neckx = offset;
-    necky = (w_c-w_n)./2;
-    offset = offset+l_n;
-    slitx = offset;
-    slity = 0;
-    offset = offset+h+e;
-   
-    rectangle('Position',[cavx cavy l_c w_c],'FaceColor',"#d4d4d0",'EdgeColor',[0 0 0]); %cavity
-    rectangle('Position',[neckx necky l_n w_n],'FaceColor',"#d4d4d0",'EdgeColor',[0 0 0]); %neck
-    rectangle('Position',[slitx slity h a_y],'FaceColor',"#d4d4d0",'EdgeColor',[0 0 0]); %slit
-end
-axis equal
-drawnow; % Force immediate plot update
-hold off
+    figure()
+    hold on
+    % Variable initialisation
+    offset = 0; %cumulative offset
+    cavx = 0; %starting position
+    
+    for ii = 1:n
+    
+        w_n = geometry.neck.widths(ii); %y_dim
+        l_n = geometry.neck.lengths(ii); %x_dim
+        w_c = geometry.cavity.widths(ii); %y_dim
+        l_c = geometry.cavity.lengths(ii); %x_dim
+        h = geometry.slit.widths(ii); %x_dim
+        a_y = geometry.slit.lengths(ii); %y_dim
+        
+        cavx = offset;
+        cavy = 0;
+        offset = offset+l_c;
+        neckx = offset;
+        necky = (w_c-w_n)./2;
+        offset = offset+l_n;
+        slitx = offset;
+        slity = 0;
+        offset = offset+h+e;
+       
+        rectangle('Position',[cavx cavy l_c w_c],'FaceColor',"#d4d4d0",'EdgeColor',[0 0 0]); %cavity
+        rectangle('Position',[neckx necky l_n w_n],'FaceColor',"#d4d4d0",'EdgeColor',[0 0 0]); %neck
+        rectangle('Position',[slitx slity h a_y],'FaceColor',"#d4d4d0",'EdgeColor',[0 0 0]); %slit
+    end
+        axis equal
+        drawnow; % Force immediate plot update
+        hold off
 end
 
 function table = geotable(optimisedgeometry)

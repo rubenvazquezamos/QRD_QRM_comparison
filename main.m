@@ -16,8 +16,11 @@ run("config.m")
 run("optimConfig.m")
 run("optimiseGeometry.m")
 save("optgeo.mat","optgeo") %save optimised geometry
-clear all %information hiding
+disp(initialguess)
 return
+
+clear all %information hiding
+
 
 %% GENERATE COMSOL GEOMETRY
 run("config")
