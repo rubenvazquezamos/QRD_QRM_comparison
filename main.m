@@ -14,6 +14,7 @@
 LatexPreamble()
 run("config.m")
 run("optimConfig.m")
+rng("shuffle") %initialise random number generator
 run("optimiseGeometry.m")
 save("optgeo.mat","optgeo") %save optimised geometry
 disp(initialguess)

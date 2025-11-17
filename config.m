@@ -14,7 +14,7 @@ Geo.wellWidth = 7e-2; %also unit cell width
 Geo.betweenWells = 1e-2;
 Geo.panelLength = Geo.numberWells*(Geo.wellWidth+Geo.betweenWells)...
     +Geo.betweenWells;
-Geo.panelWidth = 10e-2;
+Geo.panelWidth = 3e-2;
 Geo.stockThickness = 12e-3; %stock used for milling internal components
 Geo.baseThickness = 8e-3; %stock used for base
 Geo.lidThickness = 3e-3; %stock used for lid

@@ -80,36 +80,40 @@ switch ineqconstraints
     inequality_constants = [];
 end
 
-genetic = questdlg("run genetic algorithm for initial guess?");
-switch genetic
-    case 'Yes'
-        % positions: [w_n,l_n,w_c,l_c,h,a_y]
-        initialguess = ga(@objectiveFunction,30);
-        %normalise initial guess
-        initialguess = abs(initialguess);
-        initialguess = initialguess./max(initialguess(:));
-        
-        disp(initialguess);
-    case 'No'
-end
+% genetic = questdlg("run genetic algorithm to find initial guess?");
+% switch genetic
+%     case 'Yes'
+%         % positions: [w_n,l_n,w_c,l_c,h,a_y]
+%         initialguess = ga(@objectiveFunction,30,[],[],equality_coefficients,...
+%             equality_constants,lower_bounds,upper_bounds);
+%         disp(initialguess);
+%     case 'No'
+% end
 
-randomise = questdlg("randomise initial guess?");
+% randomise = questdlg("randomise initial guess?");
+% switch randomise
+%     case 'Yes'
+%         initialguess = abs(rand(size(initialguess),"double"));
+%         initialguess = initialguess.*1e-3; %scale initial guess       
+%     case 'No'
+% end
+
+
+randomise = questdlg("force ballpark initial guess?");
 switch randomise
     case 'Yes'
-        rng("shuffle") %initialise random number generator
-        initialguess = abs(rand(size(initialguess),"double"));
-        initialguess = initialguess*1e-2; %scale initial guess       
-    case 'No'
+        initialguess = cell2mat(flattenStruct2Cell(load('optgeo1.mat')));
+        initialguess = initialguess';
+        initialguess = initialguess(:); %ballpark initial guess
+     case 'No'
 end
-
 
 % =======================================================================
 %% Call fmincon to perform Optimisation
 options = optimoptions('fmincon','Display','iter','PlotFcn',{@optimplotstepsize...
 ,@optimplotfval,@optimplotx},'MaxFunctionEvaluations',...
-5000*length(initialguess(:)),'MaxIterations',500*length(initialguess(:)),...
-'FunctionTolerance',1e-7,'StepTolerance',1e-14,'Algorithm','interior-point',...
-'FiniteDifferenceStepSize',1e-3,'UseParallel',true);
+500*length(initialguess(:)),'MaxIterations',500*length(initialguess(:)),...
+'FunctionTolerance',1e-7,'StepTolerance',1e-14,'Algorithm','interior-point');
 
 % x = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options)
 
