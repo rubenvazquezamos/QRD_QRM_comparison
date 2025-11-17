@@ -5,7 +5,7 @@
 
 global targetphase n optim_f df stinson_constants
 
-stinson_constants = generateStinsonConstants(); %stinson constants
+stinson_constants = generateStinsonConstants();
 
 % =========================================================================
 
