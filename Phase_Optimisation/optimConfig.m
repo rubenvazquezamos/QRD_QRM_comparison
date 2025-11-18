@@ -20,11 +20,11 @@ minl_c = 1e-3;
 minh = 1e-3;
 
 % Inequality constraints
-% [w_n,l_n,w_c,l_c,h,a_y]
+%   [w_n,l_n,w_c,l_c,h,a_y]
 A = [
       1  0 -1  0  0  0;
-     -1  0  0  0  0  0;
       1  0  0  0  0  0;
+     -1  0  0  0  0  0;
       0 -1  0  0  0  0;
       0  0  0 -1  0  0;
       0  0  0  0 -1  0;
@@ -32,8 +32,8 @@ A = [
 
 b = [
     0;
+     maxw_n;
     -minw_n;
-    maxw_n;
     -minl_n;
     -minl_c;
     -minh;

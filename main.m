@@ -23,7 +23,6 @@ return
 
 clear all %information hiding
 
-
 %% GENERATE COMSOL GEOMETRY
 run("config")
 load("optgeo.mat")
@@ -34,9 +33,7 @@ QRMgeometryCOMSOL.geom('geom1').export('optgeo.mphbin') %geometry file for impor
 
 %% OBTAIN SCATTERED PRESSURE
 run("buildCOMSOLmodels.m")
-run("QRD_TMM.m")
-run("QRM_TMM.m")
-run("flat_TMM.m")
+run("TMM_models.m")
 
 %% DIFFUSION COEFFICIENT
 
@@ -55,7 +52,7 @@ end
 hold off
 
 
-%% ----               FUNCTIONS              ----
+%% ----               HELPER FUNCTIONS              ----
 
 function geometry = prepCOMSOLgeom(optgeo,Geo)
     
@@ -86,76 +83,4 @@ function [] = LatexPreamble(~) % Latex Preamble
     path = convertCharsToStrings(fileparts(matlab.desktop.editor.getActiveFilename));
     cd(path)
     clear; clear global *; clc; warning off;
-end
-
-
-function Rbig = discretizeDiffuserReflectionCoefficient(N,x,R)
-    % INPUTS
-    %   N: number of wells and prime number
-    %   x: vector of points along diffuser surface.
-    %   R: matrix of reflection coefficient values.
-    % 
-    % OUTPUTS
-    %   Rbig: matrix of spatially discretized reflection coefficient values.
-            
-        augmentation_index = length(x)./N;
-        Rbig = repelem(R, 1, augmentation_index);    
-end
-
-function Ps = fftfraunhofer(theta,Rs,k,x)
-    % ======================================
-    %
-    %   PS = FFTFRAUNHOFER(THETA,RS,K,X)
-    %
-    %   FFTFRAUNHOFER calculates the far field PS using the Fraunhofer integral
-    %   of a surface with reflection RS(X) at wavenumber k and at angles
-    %   theta
-    %
-    %   Noé Jiménez, Salford, October 2016
-    %
-    %=======================================
-    na = length(x);
-    dx = x(2)-x(1);
-    Ps = zeros(size(theta));
-    for ia=1:na
-        Ps = Ps+Rs(ia).*exp(1i*k*x(ia)*sin(theta))*dx; 
-    end
-
-end
-
-function delta = calculateDiffusionCoefficient(Ps,theta,ri)
-    % INPUTS:
-    %   Ps: [NxM] matrix of scattered pressure across N wavenumbers 
-    %       and N observer angles
-    %   theta: vector of observer angles
-    %   ri: scalar restriction on extreme observer angles
-    %      eg: ri = 2 gives angle range -88 to 88 deg.
-    % OUTPUT:
-    %   delta: vector of diffusion coefficient values
-    %-------------------------------------------------------------------------%
-   
-    if ri ~= 0
-      theta = Geo.Theta(ri:end-ri); %restrict extreme observer angles
-      Ps = Ps(:,ri:end-ri);
-    end
-
-    SI = abs(Ps).^2; %SPL is converted to sound intensity.
-    n_d = length(theta);
-    
-    SIsum = sum(SI,2);
-    SIsq = sum(SI.^2,2);
-    
-    delta = (SIsum.^2 - SIsq)./((n_d-1)*(SIsq)); %diffusion coefficient
-
-end
-
-function delta_n = normaliseDiffusionCoefficient(delta, deltaf)
-    %INPUTS
-    % delta: diffusion coefficient of reflector
-    % deltaf: diffusion coeffficient of flat plane
-    %
-    %OUTPUT
-    % delta_n: normalised diffusion coefficient
-
-    delta_n = (delta - deltaf)./(1-deltaf);
 end

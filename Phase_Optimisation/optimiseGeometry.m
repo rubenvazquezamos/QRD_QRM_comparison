@@ -2,6 +2,8 @@
 %well at a single frequency to that of a QRD.
 % Based on Phase_Optimisation v 2.1.2
 % needs config.m to run
+% 
+% functions defined locally due to need for global variables
 
 global targetphase n optim_f df stinson_constants
 
@@ -84,7 +86,8 @@ genetic = questdlg("run genetic algorithm to find initial guess?");
 switch genetic
     case 'Yes'
         % positions: [w_n,l_n,w_c,l_c,h,a_y]
-        initialguess = ga(@objectiveFunction,30,[],[],equality_coefficients,...
+        initialguess = ga(@objectiveFunction,30,[],...
+            [],equality_coefficients,...
             equality_constants,lower_bounds,upper_bounds);
         disp(initialguess);
     case 'No'
