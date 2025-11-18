@@ -19,38 +19,45 @@ run("optimiseGeometry.m")
 save("optgeo.mat","optgeo") %save optimised geometry
 disp(initialguess)
 
-return
-
 clear all %information hiding
 
 %% GENERATE COMSOL GEOMETRY
 run("config")
-load("optgeo.mat")
+load("optgeo.mat","optgeo")
 geoCOMSOL = prepCOMSOLgeom(optgeo,Geo);
 QRMgeometryCOMSOL = generateCOMSOLgeom(geoCOMSOL);
 QRMgeometryCOMSOL.resetHist %compact model history
 QRMgeometryCOMSOL.geom('geom1').export('optgeo.mphbin') %geometry file for import
 
-%% OBTAIN SCATTERED PRESSURE
+%% SCATTERED PRESSURE
 run("buildCOMSOLmodels.m")
 run("TMM_models.m")
-
 %% DIFFUSION COEFFICIENT
+model_names = ["QRD TMM", "QRM TMM", "flat TMM","QRD numerical",...
+    "QRM numerical","flat numerical"];
 
-model_names = {'QRD_TMM', 'QRD_COMSOL', 'QRM_TMM', 'QRM_COMSOL', 'flat_TMM', 'flat_COMSOL'};
+delta.QRD_TMM = calculateDiffusionCoefficient(Ps.QRD_TMM,Angle.Vector,5);
+delta.QRM_TMM = calculateDiffusionCoefficient(Ps.QRM_TMM,Angle.Vector,5);
+delta.flat_TMM = calculateDiffusionCoefficient(Ps.flat_TMM,Angle.Vector,5);
+delta.QRD_COMSOL = calculateDiffusionCoefficient(Ps.QRD_COMSOL,Angle.Vector,5);
+delta.QRM_COMSOL = calculateDiffusionCoefficient(Ps.QRM_COMSOL,Angle.Vector,5);
+delta.flat_COMSOL = calculateDiffusionCoefficient(Ps.flat_COMSOL,Angle.Vector,5);
 
-for k = 1:numel(model_names)
-    delta.(model_names{k}) = calculateDiffusionCoefficient(Ps.(model_names{k}));
-    deltan.(model_names{k}) = normaliseDiffusionCoefficient(delta.(model_names{k}));
-end
+% 
+% deltan.QRD_TMM = normaliseDiffusionCoefficient(delta.QRD_TMM,delta.flat_TMM);
+% deltan.QRM_TMM = normaliseDiffusionCoefficient(delta.QRM_TMM,delta.flat_TMM);
 
 %% RESULTS
-for k = 1:numel(model_names)
-    plot(Freq.Vector,delta.(model_names{k}))
-    hold on
-end
-hold off
-
+figure()
+set(groot,'DefaultLineLineWidth',2)
+plot(Freq.Vector,delta.QRD_TMM)
+hold on
+plot(Freq.Vector,delta.QRM_TMM)
+plot(Freq.Vector,delta.flat_TMM)
+plot(Freq.Vector,delta.QRD_COMSOL)
+plot(Freq.Vector,delta.QRM_COMSOL)
+plot(Freq.Vector,delta.flat_COMSOL)
+legend(model_names)
 
 %% ----               HELPER FUNCTIONS              ----
 

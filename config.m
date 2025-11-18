@@ -1,3 +1,7 @@
+stinson_constants = generateStinsonConstants();
+c_0 = stinson_constants.sound_speed;
+rho_0 = stinson_constants.density;
+
 %% FREQUENCY
 %-------------------------------------------------------------------------%
 Freq.f_min = 250;
@@ -21,7 +25,7 @@ Geo.stockThickness = 12e-3; %stock used for milling internal components
 Geo.baseThickness = 8e-3; %stock used for base
 Geo.lidThickness = 3e-3; %stock used for lid
 Geo.numxpts = lcm(Geo.numberWells,100); %number of x points
-Geo.xpoints = linspace(-Geo.panelLength./2,Geo.panelLength./2,Geo.numxpts); %x points
+Geo.xpoints = linspace(-Geo.panelLength./2,Geo.panelLength./2,Geo.numxpts);
 
 %-------------------------------------------------------------------------%
 

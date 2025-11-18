@@ -1,6 +1,17 @@
-
 function R = calculateMetadiffuserReflection(n, geometry, f_min,f_max,df,stinson_constants)
-      
+    %calculates the complex reflection coefficient of an acoustic
+    %metadiffuser.
+
+    %INPUTS
+    %
+    % geometry struct with fields
+    %   neck.widths/lengths
+    %   cavity.widths/lengths
+    %   slit.widths/lengths
+    %
+    %OUTPUTS
+    % R Nxnumel(f_v) matrix of complex reflection coefficient values
+
     M = 1; %number of resonators per slit 
     f_v = f_min:df:f_max;
     w = 2*pi*f_v;

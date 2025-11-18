@@ -17,7 +17,7 @@ model.component.create('comp1', true);
 disp(' -- Sending parameters')
 %-------------------------------------------------------------------------%
 
-model.param.set('L', num2str(Geo.panelLength), 'Width of the diffuser');
+model.param.set('L', num2str(Geo.panelLength), 'Length of the diffuser');
 model.param.set('r_air', num2str(Probe.domain), 'Radius of the air domain (for single diffuser)');
 model.param.set('r0', '100[m]', 'Evaluation distance');
 model.param.set('Hair', '1[m]', 'Height of the air domain');
@@ -268,7 +268,7 @@ if save_dlg == true
     end
 end
 
-mphsave(model,[File.Path,filesep,File.Tag2,File.Extension]);
+mphsave(model,[File.Path,filesep,File.Tag4,File.Extension]);
 
 disp(' -- DONE')
 

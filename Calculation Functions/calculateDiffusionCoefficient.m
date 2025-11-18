@@ -10,7 +10,7 @@ function delta = calculateDiffusionCoefficient(Ps,theta,ri)
     %-------------------------------------------------------------------------%
    
     if ri ~= 0
-      theta = Geo.Theta(ri:end-ri); %restrict extreme observer angles
+      theta = theta(ri:end-ri); %restrict extreme observer angles
       Ps = Ps(:,ri:end-ri);
     end
 

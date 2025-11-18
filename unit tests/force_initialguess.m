@@ -1,3 +1,6 @@
+% unit test to check conversion of geometry structure into geometry matrix
+% useful when forcing an initial guess
+
 initialguess = cell2mat(flattenStruct2Cell(load('optgeo1.mat')));
 flatinitialguess = initialguess';
 flatinitialguess = flatinitialguess(:); %ballpark initial guess

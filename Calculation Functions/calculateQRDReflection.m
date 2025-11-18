@@ -1,4 +1,4 @@
-function [L, s_n, R_QRD] = calculateQRDReflection(N,W,design_freq,f_min,f_max,df,rho_0,c_0)
+function R_QRD = calculateQRDReflection(N,W,design_freq,f_min,f_max,df,rho_0,c_0)
 
     %% Wavenumber vector
     f_v = (f_min:df:f_max)'; %transposed so that implicit expansion works on line 20

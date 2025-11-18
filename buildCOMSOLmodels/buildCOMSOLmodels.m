@@ -15,6 +15,7 @@ File.Path = [pwd,filesep,'Models'];
 File.Tag1 = 'Comsol_QRD5';
 File.Tag2 = 'flat_plane';
 File.Tag3 = 'optgeo.mphbin';
+File.Tag4 = 'QRM_5';
 File.Extension = '.mph';
 
 %       FEM MODELLING
